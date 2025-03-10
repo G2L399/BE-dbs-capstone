@@ -1,14 +1,138 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // Change this based on your database
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   Int                    @id @default(autoincrement())
+  username             String
+  profilePicture       String?
+  email                String                 @unique
+  password             String
+  TravelPlan           TravelPlan[]
+  Payment              Payment[]
+  TravelTicket         TravelTicket[]
+  LodgingTicket        LodgingTicket[]
+  TransportationTicket TransportationTicket[]
+}
+
+model TravelPlan {
+  id                   Int                    @id @default(autoincrement())
+  user_id              Int
+  totalPrice           Int
+  status               StatusEnum
+  user                 User                   @relation(fields: [user_id], references: [id])
+  Payment              Payment[]
+  TransportationTicket TransportationTicket[]
+  LodgingTicket        LodgingTicket[]
+  TravelTicket         TravelTicket[]
+}
+
+model Payment {
+  id            Int        @id @default(autoincrement())
+  user_id       Int
+  item_id       Int
+  transactionId String     @unique
+  paymentType   String
+  bank          BankEnum
+  vaNumber      String
+  paymentStatus String
+  user          User       @relation(fields: [user_id], references: [id])
+  travelPlan    TravelPlan @relation(fields: [item_id], references: [id])
+}
+
+model TravelTicket {
+  id          Int        @id @default(autoincrement())
+  user_id     Int
+  travelId    Int
+  guestAmount Int
+  totalPrice  Int
+  status      StatusEnum
+  plan_id     Int
+  user        User       @relation(fields: [user_id], references: [id])
+  plan        TravelPlan @relation(fields: [plan_id], references: [id])
+}
+
+model LodgingTicket {
+  id           Int        @id @default(autoincrement())
+  user_id      Int
+  lodgingId    Int
+  guestAmount  Int
+  totalPrice   Int
+  checkinDate  DateTime
+  checkoutDate DateTime
+  status       StatusEnum
+  plan_id      Int
+  user         User       @relation(fields: [user_id], references: [id])
+  plan         TravelPlan @relation(fields: [plan_id], references: [id])
+}
+
+model TransportationTicket {
+  id                Int            @id @default(autoincrement())
+  user_id           Int
+  transportation_id Int
+  passengerAmount   Int
+  totalPrice        Int
+  status            StatusEnum
+  plan_id           Int
+  user              User           @relation(fields: [user_id], references: [id])
+  transportation    Transportation @relation(fields: [transportation_id], references: [id])
+  plan              TravelPlan     @relation(fields: [plan_id], references: [id])
+}
+
+model Transportation {
+  id                   Int                    @id @default(autoincrement())
+  name                 String
+  description          String
+  pickupLocation       String
+  destination          String
+  pickupTime           DateTime
+  arrivalTime          DateTime
+  price                Int
+  type                 TransportTypeEnum
+  transportPictureUrl  String
+  TransportationTicket TransportationTicket[]
+}
+
+model Lodging {
+  id                Int    @id @default(autoincrement())
+  name              String
+  description       String
+  lodgingPictureUrl String
+  price             Int
+  address           String
+}
+
+model TravelDestination {
+  id               Int    @id @default(autoincrement())
+  name             String
+  description      String
+  travelPictureUrl String
+  price            Int?
+  location         String
+}
+
+enum StatusEnum {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum TransportTypeEnum {
+  BUS
+  TRAIN
+  FLIGHT
+  CAR
+}
+
+enum BankEnum {
+  BCA
+  MANDIRI
+  BNI
+  BRI
+  OTHER
 }
