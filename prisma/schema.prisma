@@ -1,3 +1,12 @@
+// generator client {
+//   provider = "prisma-client-js"
+// }
+
+// datasource db {
+//   provider = "sqlite" // Or your chosen DB
+//   url      = env("DATABASE_URL")
+// }
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,126 +16,240 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- Core User and Plan ---
+
 model User {
-  id                   Int                    @id @default(autoincrement())
-  username             String
-  profilePicture       String?
-  email                String                 @unique
-  password             String
-  TravelPlan           TravelPlan[]
-  Payment              Payment[]
-  TravelTicket         TravelTicket[]
-  LodgingTicket        LodgingTicket[]
-  TransportationTicket TransportationTicket[]
+  id             Int      @id @default(autoincrement())
+  username       String
+  profilePicture String?
+  email          String   @unique
+  password       String // Remember to hash passwords!
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  travelPlans            TravelPlan[]
+  payments               Payment[]
+  travelTickets          TravelTicket[]
+  lodgingTickets         LodgingTicket[]
+  transportationTickets  TransportationTicket[]
+  reviews                Review[]
+  wishlistedDestinations TravelDestination[]    @relation("UserWishlistDestinations")
+  wishlistedLodgings     Lodging[]              @relation("UserWishlistLodgings")
 }
 
 model TravelPlan {
-  id                   Int                    @id @default(autoincrement())
-  user_id              Int
-  totalPrice           Int
-  status               StatusEnum
-  user                 User                   @relation(fields: [user_id], references: [id])
-  Payment              Payment[]
-  TransportationTicket TransportationTicket[]
-  LodgingTicket        LodgingTicket[]
-  TravelTicket         TravelTicket[]
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  name       String? // Optional name for the plan (e.g., "Bali Summer Trip")
+  startDate  DateTime? // Overall plan start date
+  endDate    DateTime? // Overall plan end date
+  totalPrice Int // Consider Decimal if handling fractions or large sums
+  status     StatusEnum @default(PENDING)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  // Relations
+  user                  User                   @relation(fields: [userId], references: [id])
+  payments              Payment[]
+  transportationTickets TransportationTicket[]
+  lodgingTickets        LodgingTicket[]
+  travelTickets         TravelTicket[]
 }
 
-model Payment {
-  id            Int        @id @default(autoincrement())
-  user_id       Int
-  item_id       Int
-  transactionId String     @unique
-  paymentType   String
-  bank          BankEnum
-  vaNumber      String
-  paymentStatus String
-  user          User       @relation(fields: [user_id], references: [id])
-  travelPlan    TravelPlan @relation(fields: [item_id], references: [id])
-}
+// --- Booking/Ticket Models ---
 
 model TravelTicket {
-  id          Int        @id @default(autoincrement())
-  user_id     Int
-  travelId    Int
-  guestAmount Int
-  totalPrice  Int
-  status      StatusEnum
-  plan_id     Int
-  user        User       @relation(fields: [user_id], references: [id])
-  plan        TravelPlan @relation(fields: [plan_id], references: [id])
+  id                  Int        @id @default(autoincrement())
+  userId              Int
+  travelDestinationId Int // Renamed for clarity
+  guestAmount         Int
+  totalPrice          Int
+  visitDate           DateTime? // Specific date of visit, if applicable
+  status              StatusEnum @default(PENDING)
+  planId              Int? // Make optional? Or ensure every ticket belongs to a plan? Assume plan required for now.
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  // Relations
+  user              User              @relation(fields: [userId], references: [id])
+  travelDestination TravelDestination @relation(fields: [travelDestinationId], references: [id])
+  plan              TravelPlan?       @relation(fields: [planId], references: [id]) // Link to plan
 }
 
 model LodgingTicket {
   id           Int        @id @default(autoincrement())
-  user_id      Int
+  userId       Int
   lodgingId    Int
   guestAmount  Int
   totalPrice   Int
-  checkinDate  DateTime
-  checkoutDate DateTime
-  status       StatusEnum
-  plan_id      Int
-  user         User       @relation(fields: [user_id], references: [id])
-  plan         TravelPlan @relation(fields: [plan_id], references: [id])
+  checkInDate  DateTime
+  checkOutDate DateTime
+  status       StatusEnum @default(PENDING)
+  planId       Int? // Assume plan required
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Relations
+  user    User        @relation(fields: [userId], references: [id])
+  lodging Lodging     @relation(fields: [lodgingId], references: [id])
+  plan    TravelPlan? @relation(fields: [planId], references: [id]) // Link to plan
 }
 
 model TransportationTicket {
-  id                Int            @id @default(autoincrement())
-  user_id           Int
-  transportation_id Int
+  id                Int        @id @default(autoincrement())
+  userId            Int
+  transportationId  Int // Renamed for consistency
   passengerAmount   Int
   totalPrice        Int
-  status            StatusEnum
-  plan_id           Int
-  user              User           @relation(fields: [user_id], references: [id])
-  transportation    Transportation @relation(fields: [transportation_id], references: [id])
-  plan              TravelPlan     @relation(fields: [plan_id], references: [id])
+  departureDateTime DateTime // Specific departure for this ticket
+  arrivalDateTime   DateTime // Specific arrival for this ticket
+  status            StatusEnum @default(PENDING)
+  planId            Int? // Assume plan required
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  // Relations
+  user           User           @relation(fields: [userId], references: [id])
+  transportation Transportation @relation(fields: [transportationId], references: [id])
+  plan           TravelPlan?    @relation(fields: [planId], references: [id]) // Link to plan
 }
 
+// --- Service Detail Models ---
+
 model Transportation {
-  id                   Int                    @id @default(autoincrement())
-  name                 String
-  description          String
-  pickupLocation       String
-  destination          String
-  pickupTime           DateTime
-  arrivalTime          DateTime
-  price                Int
-  type                 TransportTypeEnum
-  transportPictureUrl  String
-  TransportationTicket TransportationTicket[]
+  id                  Int               @id @default(autoincrement())
+  name                String // e.g., "Flight GA-123", "Express Train", "Local Bus 5A"
+  description         String?
+  company             String? // e.g., "Garuda Indonesia", "National Rail"
+  pickupLocation      String // Keep as string for simplicity OR link to City/Location model
+  destination         String // Keep as string for simplicity OR link to City/Location model
+  // General schedule times (might be less relevant if tickets store specifics)
+  pickupTime          DateTime?
+  arrivalTime         DateTime?
+  basePrice           Int // Price per passenger (can vary)
+  type                TransportTypeEnum
+  transportPictureUrl String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  // Relations
+  tickets TransportationTicket[]
+  // Potentially add tags/categories (e.g., "Budget", "Luxury", "Scenic Route")
+  // categories          Category[]           @relation("TransportationCategories")
+  Review  Review[]
 }
 
 model Lodging {
-  id                Int    @id @default(autoincrement())
-  name              String
-  description       String
-  lodgingPictureUrl String
-  price             Int
-  address           String
+  id                Int      @id @default(autoincrement())
+  name              String // e.g., "Grand Hyatt Bali"
+  description       String?
+  lodgingPictureUrl String?
+  pricePerNight     Int // Base price, actual price in ticket might vary
+  address           String // Full address
+  city              String? // Consider linking to a City model
+  country           String? // Consider linking to a Country model
+  latitude          Float? // For map features / proximity search
+  longitude         Float? // For map features / proximity search
+  propertyType      String? // e.g., "Hotel", "Hostel", "Villa", "Apartment"
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  lodgingTickets LodgingTicket[]
+  reviews        Review[]        @relation("LodgingReviews")
+  categories     Category[]      @relation("LodgingCategories")
+  wishlistedBy   User[]          @relation("UserWishlistLodgings")
 }
 
 model TravelDestination {
-  id               Int    @id @default(autoincrement())
-  name             String
-  description      String
-  travelPictureUrl String
-  price            Int?
-  location         String
+  id               Int      @id @default(autoincrement())
+  name             String // e.g., "Ubud Monkey Forest"
+  description      String?
+  travelPictureUrl String?
+  price            Int? // Entrance fee, null if free or variable
+  address          String? // Physical address if applicable
+  city             String? // Consider linking to a City model
+  country          String? // Consider linking to a Country model
+  latitude         Float?
+  longitude        Float?
+  openingHours     String? // e.g., "09:00-17:00"
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  travelTickets TravelTicket[]
+  reviews       Review[]       @relation("DestinationReviews")
+  categories    Category[]     @relation("DestinationCategories")
+  wishlistedBy  User[]         @relation("UserWishlistDestinations")
 }
 
+// --- Supporting Models (Recommendations, Reviews, Categories, Payment) ---
+
+model Payment {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  planId        Int // Assuming payment is always for a whole plan
+  transactionId String   @unique // From payment gateway
+  paymentType   String // e.g., "virtual_account", "credit_card"
+  bank          BankEnum // If applicable
+  vaNumber      String? // If applicable
+  amount        Int // Amount paid for this transaction
+  paymentStatus String // e.g., "pending", "paid", "failed" (more specific than plan status)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id])
+  travelPlan TravelPlan @relation(fields: [planId], references: [id])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  rating    Int // e.g., 1 to 5 stars
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Review Target (Choose ONE - Add more relations if needed for Transportation etc.)
+  travelDestinationId Int?
+  lodgingId           Int?
+  transportationId    Int? // Can add later if needed
+
+  // Relations
+  user              User               @relation(fields: [userId], references: [id])
+  travelDestination TravelDestination? @relation("DestinationReviews", fields: [travelDestinationId], references: [id])
+  lodging           Lodging?           @relation("LodgingReviews", fields: [lodgingId], references: [id])
+  transportation    Transportation?    @relation(fields: [transportationId], references: [id]) // Uncomment if adding
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @unique // e.g., "Beach", "History", "Adventure", "Nature", "Luxury", "Budget"
+
+  // Relations (Many-to-Many)
+  destinations TravelDestination[] @relation("DestinationCategories")
+  lodgings     Lodging[]           @relation("LodgingCategories")
+  // transportations Transportation[]    @relation("TransportationCategories") // Add if needed
+}
+
+// --- Enums ---
+
 enum StatusEnum {
-  PENDING
-  CONFIRMED
-  CANCELLED
+  PENDING // Initial state, awaiting payment or confirmation
+  CONFIRMED // Booked and paid/confirmed
+  CANCELLED // Cancelled by user or system
+  COMPLETED // Trip/stay finished (optional, useful for triggering reviews)
 }
 
 enum TransportTypeEnum {
   BUS
   TRAIN
   FLIGHT
-  CAR
+  CAR // Could be rental or ride-share
+  FERRY
+  OTHER
 }
 
 enum BankEnum {
@@ -134,5 +257,5 @@ enum BankEnum {
   MANDIRI
   BNI
   BRI
-  OTHER
+  OTHER // For non-listed banks or different payment methods
 }

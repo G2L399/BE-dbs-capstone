@@ -20,9 +20,19 @@ fs.mkdirSync(dirPath, { recursive: true });
 const filePath = path.join(dirPath, "app.ts");
 fs.writeFileSync(
   filePath,
-  `export default (request, h) => {
-    return \`${method.toUpperCase()} request to /${routePath}\`;
-  };`
+  `
+    import Hapi from "@hapi/hapi";
+    export default (
+      request: Hapi.Request<Hapi.ReqRefDefaults>,
+      h: Hapi.ResponseToolkit<Hapi.ReqRefDefaults>
+    ) => {
+     let id = null;
+     if (request.params.id) {
+       id = request.params.id;
+     }
+     return h.response({message: "${method.toUpperCase()} request to /${routePath}", id}).code(200);
+    };
+  `
 );
 
 console.log(`Route created: ${method.toUpperCase()} /${routePath}`);
