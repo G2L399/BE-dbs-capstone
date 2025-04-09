@@ -2,6 +2,10 @@
 
 This project demonstrates a basic Hapi server setup with dynamically loaded routes based on file system structure.
 
+## Requirements
+
+Node version >= 23.0.0 OR use ts-node
+
 ## Project Structure
 
 The project structure is organized as follows:
@@ -43,6 +47,12 @@ To create a new GET route for `/travels`, you would:
       return "GET request to /travels";
     };
     ```
+
+4.  You can also run the command
+    ```bash
+    node create {METHOD} {ROUTE}
+    ```
+    to create a new route. this will create a new app.ts file at src/{METHOD}/{ROUTE}
 
 ## Running the Application
 
