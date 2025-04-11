@@ -36,6 +36,22 @@ model User {
   reviews                Review[]
   wishlistedDestinations TravelDestination[]    @relation("UserWishlistDestinations")
   wishlistedLodgings     Lodging[]              @relation("UserWishlistLodgings")
+  Preferences            Preferences[]
+}
+
+model Preferences {
+  id                  Int      @id @default(autoincrement())
+  userId              Int
+  transportationId    Int
+  lodgingId           Int
+  travelDestinationId Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user              User               @relation(fields: [userId], references: [id])
+  transportation    Transportation     @relation(fields: [transportationId], references: [id])
+  lodging           Lodging            @relation(fields: [lodgingId], references: [id])
+  travelDestination TravelDestination? @relation(fields: [travelDestinationId], references: [id])
 }
 
 model TravelPlan {
@@ -134,10 +150,11 @@ model Transportation {
   updatedAt           DateTime          @updatedAt
 
   // Relations
-  tickets TransportationTicket[]
+  tickets     TransportationTicket[]
   // Potentially add tags/categories (e.g., "Budget", "Luxury", "Scenic Route")
   // categories          Category[]           @relation("TransportationCategories")
-  Review  Review[]
+  Review      Review[]
+  Preferences Preferences[]
 }
 
 model Lodging {
@@ -160,6 +177,7 @@ model Lodging {
   reviews        Review[]        @relation("LodgingReviews")
   categories     Category[]      @relation("LodgingCategories")
   wishlistedBy   User[]          @relation("UserWishlistLodgings")
+  Preferences    Preferences[]
 }
 
 model TravelDestination {
@@ -182,6 +200,7 @@ model TravelDestination {
   reviews       Review[]       @relation("DestinationReviews")
   categories    Category[]     @relation("DestinationCategories")
   wishlistedBy  User[]         @relation("UserWishlistDestinations")
+  Preferences   Preferences[]
 }
 
 // --- Supporting Models (Recommendations, Reviews, Categories, Payment) ---
