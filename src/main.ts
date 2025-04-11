@@ -1,14 +1,17 @@
 import Hapi, { type RouteDefMethods } from "@hapi/hapi";
-import Joi from "joi";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import Inert from "@hapi/inert";
 import Vision from "@hapi/vision";
 import HapiSwagger from "hapi-swagger";
+import { PrismaClient } from "@prisma/client";
+import * as JwtAuth from "hapi-auth-jwt2";
+
 const { log } = console;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const prisma = new PrismaClient();
 const init = async () => {
   const server = Hapi.server({
     port: 3000,
@@ -19,7 +22,27 @@ const init = async () => {
           abortEarly: false,
         },
       },
+      payload: {
+        allow: ["application/json", "multipart/form-data"], // Allow both JSON and multipart
+        multipart: true, // Enable multipart support
+      },
     },
+  });
+  await server.register(JwtAuth);
+
+  server.auth.strategy("jwt", "jwt", {
+    key: process.env.JWT_SECRET, // Secret key used to sign the token
+    validate: async (decoded: any, request) => {
+      // Validate the decoded token (e.g., check if the user exists in the database)
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+      });
+      if (!user) {
+        return { isValid: false }; // Invalid token
+      }
+      return { isValid: true, credentials: user }; // Valid token
+    },
+    verifyOptions: { algorithms: ["HS256"] }, // Algorithm used to sign the token
   });
 
   await server.register([
@@ -28,18 +51,17 @@ const init = async () => {
     {
       plugin: HapiSwagger,
       options: {
-        documentationPath: "/api",
         info: {
           title: "API Documentation",
           version: "1.0.0",
         },
-        schemes: ["http", "https"], // Specify the protocol (http/https)
       },
     },
   ]);
 
   // Helper function to dynamically load routes
-  const loadRoutes = (method: string) => {
+  const loadRoutes = (method: RouteDefMethods) => {
+    method = method.toUpperCase() as RouteDefMethods;
     const fullPath = path.join(__dirname, method);
     if (!fs.existsSync(fullPath)) return;
 
@@ -50,57 +72,53 @@ const init = async () => {
 
     files.forEach(async (file) => {
       if (file.isDirectory()) {
-        const routePath = file.name.includes("[")
-          ? file.name.replace("[", "{").replace("]", "}")
-          : file.name;
-
-        const routeHandlerPath = path.join(
-          file.parentPath,
-          file.name,
-          "app.ts"
-        );
+        let mainFile = "app.ts";
+        let routeHandlerPath = path.join(file.parentPath, file.name, mainFile);
+        if (!fs.existsSync(routeHandlerPath)) {
+          mainFile = "app.js";
+          routeHandlerPath = path.join(file.parentPath, file.name, mainFile);
+        }
         if (fs.existsSync(routeHandlerPath)) {
           const serverRoute = routeHandlerPath
             .split(method)[1]
-            .split("app.ts")[0]
+            .split(mainFile)[0]
             .replaceAll("\\", "/")
             .replaceAll("[", "{")
             .replaceAll("]", "}")
             .slice(0, -1);
           const relativeRoute = `./${method}${serverRoute
             .replaceAll("{", "[")
-            .replaceAll("}", "]")}/app.ts`;
+            .replaceAll("}", "]")}/${mainFile}`;
           // log(method, serverRoute);
           const routeHandler = (await import(relativeRoute)).default;
           const routeOptions = (await import(relativeRoute)).options;
-          console.log(
-            `Route registered: ${method.toUpperCase()} ${serverRoute}`
-          );
+
           const options = routeOptions || {
             tags: ["api"],
             description: `Route for ${method.toUpperCase()} ${serverRoute}`,
           };
-          server.route({
-            method: method.toUpperCase() as RouteDefMethods,
-            path: `${serverRoute}`,
-            handler: routeHandler,
-            options,
-          });
+          if (routeHandler) {
+            server.route({
+              method: method,
+              path: `${serverRoute}`,
+              handler: routeHandler,
+              options,
+            });
+            log(`Route registered: ${method.toUpperCase()} ${serverRoute}`);
+          }
         }
       }
     });
   };
-
   // Load routes for each HTTP method
-  loadRoutes("GET");
-  loadRoutes("POST");
-  loadRoutes("DELETE");
-  loadRoutes("PATCH");
-
-  // Start the server
+  console.log(`Server running at: ${server.info.uri}`);
+  loadRoutes("get");
+  loadRoutes("post");
+  loadRoutes("delete");
+  loadRoutes("patch");
   try {
+    // Start the server
     await server.start();
-    console.log(`Server running at: ${server.info.uri}`);
   } catch (err) {
     console.error("Error starting server:", err);
   }
