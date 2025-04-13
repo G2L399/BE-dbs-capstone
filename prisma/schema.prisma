@@ -192,6 +192,7 @@ model TravelDestination {
   latitude         Float?
   longitude        Float?
   openingHours     String? // e.g., "09:00-17:00"
+  avg_rating       Float?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
