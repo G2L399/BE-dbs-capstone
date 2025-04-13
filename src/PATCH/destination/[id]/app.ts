@@ -18,10 +18,4 @@ export const options: Hapi.RouteOptions<Hapi.ReqRefDefaults> = {
       id: Joi.string().required().description("The ID of the destination"),
     }),
   },
-  response: {
-    schema: Joi.object({
-      message: Joi.string().required(),
-      ID: Joi.string().required(),
-    }),
-  },
 };

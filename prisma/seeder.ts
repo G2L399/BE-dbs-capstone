@@ -8,6 +8,15 @@ import {
   type User,
 } from "@prisma/client";
 import { faker } from "@faker-js/faker";
+import fs from "fs";
+import csv from "csv-parser";
+const results: {
+  Place_Name: String;
+  Place_Id: string;
+  City: string;
+  Price: string;
+  Place_Ratings: string;
+}[] = [];
 
 const prisma = new PrismaClient();
 
@@ -90,34 +99,53 @@ async function seed() {
   // --- Seed Travel Destinations ---
   const destinationsCount = 20;
   const destinations: TravelDestination[] = [];
-  for (let i = 0; i < destinationsCount; i++) {
-    const destination = await createOne("travelDestination", () => ({
-      name: faker.location.country(),
-      description: faker.lorem.paragraph(),
-      travelPictureUrl: faker.image.url(),
-      price: faker.number.int({ min: 10, max: 500 }),
-      address: faker.location.streetAddress(),
-      city: faker.location.city(),
-      country: faker.location.countryCode(),
-      latitude: faker.location.latitude(),
-      longitude: faker.location.longitude(),
-      openingHours: `${faker.number.int({
-        min: 8,
-        max: 10,
-      })}:00-${faker.number.int({ min: 17, max: 20 })}:00`,
-      categories: {
-        connect: faker.helpers
-          .arrayElements(
-            existingCategories,
-            faker.number.int({ min: 1, max: 3 })
-          )
-          .map((cat) => ({ id: cat.id })),
-      },
-    }));
-    if (destination) {
-      destinations.push(destination);
-    }
+  for (let i = 0; i < 1; i++) {
+    fs.createReadStream("./prisma/hawktuah.csv")
+      .pipe(csv())
+      .on(
+        "data",
+        async (data: {
+          Place_Name: String;
+          Place_Id: string;
+          City: string;
+          Price: string;
+          Place_Ratings: string;
+        }) => {
+          const destination = await createOne("travelDestination", () => ({
+            id: Number(data.Place_Id),
+            name: data.Place_Name,
+            description: faker.lorem.paragraph(),
+            travelPictureUrl: faker.image.url(),
+            price: Number(data.Price),
+            address: faker.location.streetAddress(),
+            city: data.City,
+            country: "Indonesia",
+            latitude: faker.location.latitude(),
+            longitude: faker.location.longitude(),
+            openingHours: `${faker.number.int({
+              min: 8,
+              max: 10,
+            })}:00-${faker.number.int({ min: 17, max: 20 })}:00`,
+            categories: {
+              connect: faker.helpers
+                .arrayElements(
+                  existingCategories,
+                  faker.number.int({ min: 1, max: 3 })
+                )
+                .map((cat) => ({ id: cat.id })),
+            },
+          }));
+          if (destination) {
+            destinations.push(destination);
+          }
+        }
+      )
+      .on("end", () => {
+        console.log(results);
+      });
   }
+  console.log("hawktuah");
+  console.log(destinations);
 
   // --- Seed Lodgings ---
   const lodgingsCount = 15;
