@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import Hapi from "@hapi/hapi";
-import { hashPassword } from "../../helper/helper";
+import { hashPassword } from "../../helper/helper.ts";
 const prisma = new PrismaClient();
 export default async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {
   const { email, password, username } = request.payload as any;
