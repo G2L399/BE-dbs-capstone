@@ -17,6 +17,7 @@ const results: {
   Price: string;
   Place_Ratings: string;
 }[] = [];
+import { hashPassword } from "../src/helper/helper.ts";
 
 const prisma = new PrismaClient();
 
@@ -85,11 +86,12 @@ async function seed() {
   const usersCount = 10;
   const users: User[] = [];
   for (let i = 0; i < usersCount; i++) {
+    const password = await hashPassword("nigga");
     const user = await createOne("user", () => ({
       username: faker.internet.userName(),
       profilePicture: faker.image.avatar(),
       email: faker.internet.email(),
-      password: faker.internet.password(), // Remember to hash in a real application!
+      password,
     }));
     if (user) {
       users.push(user);
@@ -122,6 +124,7 @@ async function seed() {
             country: "Indonesia",
             latitude: faker.location.latitude(),
             longitude: faker.location.longitude(),
+            avg_rating: parseFloat(data.Place_Ratings),
             openingHours: `${faker.number.int({
               min: 8,
               max: 10,

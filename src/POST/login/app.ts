@@ -1,13 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import Hapi from "@hapi/hapi";
 import jwt from "jsonwebtoken";
+import { comparePassword } from "../../helper/helper.ts";
 const prisma = new PrismaClient();
 export default async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {
   const { email, password } = request.payload as any;
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (email && password) {
-    if (password == user?.password) {
+    if (user && (await comparePassword(password, user.password))) {
       const token = jwt.sign(
         {
           id: user?.id,
