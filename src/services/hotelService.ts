@@ -1,4 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import {
+   type Lodging, 
+  Prisma, 
+  PrismaClient, 
+  type Review, 
+  type Rooms } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -62,4 +67,63 @@ export async function getTopRatedHotelsByReview(
   return hotelsWithRating
     .sort((a, b) => b.avgRating - a.avgRating)
     .slice(0, limit);
+}
+
+export async function getBestDealHotelsByPrice(
+  takeForFiltering: number = 8
+): Promise<Lodging[]> {
+  // Retrieve hotels with their reviews
+  const hotels = await prisma.lodging.findMany({
+    take: takeForFiltering,
+    include: {
+      reviews: true
+    },
+    orderBy:{
+      pricePerNight: 'asc'
+    }
+  });
+  // Sort hotels by average rating and take requested limit
+  return hotels
+}
+
+export async function getHotelByID(
+  id:number
+): Promise<Lodging & { reviews: Review[]; Rooms: Rooms[]} | null> {
+  // Retrieve hotels with their reviews
+  const hotels = await prisma.lodging.findFirst({
+    where:{
+      id
+    },
+    include:{
+      reviews:true,
+      Rooms:true
+    }
+  })
+  
+  // Sort hotels by average rating and take requested limit
+  return hotels
+}
+export async function getBookingHotel(
+  id: number
+): Promise<(Lodging & { reviews: Review[]; Rooms: Rooms[] }) | null> {
+  // Retrieve hotels with their reviews and available rooms
+  const hotel = await prisma.lodging.findFirst({
+    where: {
+      id
+    },
+    include: {
+      reviews: true,
+      Rooms: {
+        where: {
+          status: "AVAILABLE"
+        },
+        orderBy: {
+          price: 'asc'
+        }
+      }
+    }
+  });
+
+  // Return the hotel if found
+  return hotel;
 }

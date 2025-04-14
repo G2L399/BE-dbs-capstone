@@ -1,6 +1,6 @@
 import Hapi from '@hapi/hapi';
 import Joi from 'joi';
-import { getTopRatedHotelsByReview } from '../../../services/hotelService.ts';
+import { getHotelByID } from '../../../services/hotelService.ts';
 
 export default async (
   request: Hapi.Request<Hapi.ReqRefDefaults>,
@@ -8,22 +8,21 @@ export default async (
 ) => {
   try {
     // Get query parameters with default values
-    const { limit } = request.query as { limit?: number };
-    const hotelLimit = limit || 5; // Default to 10 for this endpoint
+    const { id } = request.params as { id: number };
 
     // Use the service function to get the data
-    const topRatedHotels = await getTopRatedHotelsByReview(hotelLimit);
+    const Hotel = await getHotelByID(id);
 
     return h
       .response({
-        topRatedHotels
+        Hotel
       })
       .code(200);
   } catch (error) {
-    console.error('Error fetching top-rated hotels:', error);
+    console.error('Error fetching best-deal hotels:', error);
     return h
       .response({
-        error: 'Failed to fetch top-rated hotels'
+        error: 'Failed to fetch best-deal hotels'
       })
       .code(500);
   }
@@ -34,11 +33,8 @@ export const options: Hapi.RouteOptions = {
   description: 'Get top-rated hotels based on user reviews',
   notes: 'Returns an array of hotels sorted by rating',
   validate: {
-    query: Joi.object({
-      limit: Joi.number()
-        .min(1)
-        .default(5)
-        .description('Limit the number of hotels returned')
-    }).optional()
+    params: Joi.object({
+      id: Joi.number().required()
+    })
   }
 };

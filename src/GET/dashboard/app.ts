@@ -22,25 +22,15 @@ export default async (
             travelTickets: true
           }
         }
+      },
+      orderBy:{
+        travelTickets: {_count:'desc'}
       }
     });
 
-    // Sort by number of tickets (popularity)
-    const sortedDestinations = [...popularDestinations].sort(
-      (a, b) => (b._count?.travelTickets || 0) - (a._count?.travelTickets || 0)
-    );
 
     // Format destination data with average rating
-    const formattedDestinations = sortedDestinations.map((destination) => {
-      // Calculate average rating
-      const totalRating = destination.reviews.reduce(
-        (sum, review) => sum + review.rating,
-        0
-      );
-      const avgRating =
-        destination.reviews.length > 0
-          ? totalRating / destination.reviews.length
-          : 0;
+    const formattedDestinations = popularDestinations.map((destination) => {
 
       return {
         id: destination.id,
@@ -51,7 +41,7 @@ export default async (
         address: destination.address,
         city: destination.city,
         country: destination.country,
-        avgRating: parseFloat(avgRating.toFixed(1)),
+        avgRating: destination.avg_rating,
         reviewCount: destination.reviews.length,
         popularity: destination._count?.travelTickets || 0
       };

@@ -15,7 +15,7 @@ export default async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {
         },
         process.env.JWT_SECRET as string,
         {
-          expiresIn: '1h'
+          expiresIn: '7d'
         }
       );
       return h
