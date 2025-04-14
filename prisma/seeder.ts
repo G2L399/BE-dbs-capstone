@@ -1,22 +1,19 @@
 // script.js
 import {
   type Lodging,
+ type LodgingTicket,
+  type Payment,
   PrismaClient,
   type Transportation,
   type TravelDestination,
   type TravelPlan,
+  type TravelTicket,
   type User,
 } from "@prisma/client";
 import { faker } from "@faker-js/faker";
 import fs from "fs";
 import csv from "csv-parser";
-const results: {
-  Place_Name: String;
-  Place_Id: string;
-  City: string;
-  Price: string;
-  Place_Ratings: string;
-}[] = [];
+import { hashPassword } from "../src/helper/helper.ts";
 
 const prisma = new PrismaClient();
 
@@ -33,7 +30,6 @@ async function seed() {
     try {
       // @ts-ignore
       await prisma[modelName].createMany({ data });
-      console.log(`Created ${count} ${modelName} records.`);
     } catch (error) {
       console.error(`Error creating ${modelName}:`, error);
     }
@@ -44,7 +40,6 @@ async function seed() {
     try {
       // @ts-ignore
       const record = await prisma[modelName].create({ data: createFunction() });
-      console.log(`Created 1 ${modelName} record with id: ${record.id}`);
       return record;
     } catch (error) {
       console.error(`Error creating ${modelName}:`, error);
@@ -85,19 +80,19 @@ async function seed() {
   const usersCount = 10;
   const users: User[] = [];
   for (let i = 0; i < usersCount; i++) {
+    const password = await hashPassword("nigga");
+    const balance = Number(faker.finance.amount());
     const user = await createOne("user", () => ({
-      username: faker.internet.userName(),
+      username: faker.internet.username(),
       profilePicture: faker.image.avatar(),
       email: faker.internet.email(),
-      password: faker.internet.password(), // Remember to hash in a real application!
+      password,
+      balance,
     }));
     if (user) {
       users.push(user);
     }
   }
-
-  // --- Seed Travel Destinations ---
-  const destinationsCount = 20;
   const destinations: TravelDestination[] = [];
   for (let i = 0; i < 1; i++) {
     fs.createReadStream("./prisma/hawktuah.csv")
@@ -122,6 +117,7 @@ async function seed() {
             country: "Indonesia",
             latitude: faker.location.latitude(),
             longitude: faker.location.longitude(),
+            avg_rating: parseFloat(data.Place_Ratings),
             openingHours: `${faker.number.int({
               min: 8,
               max: 10,
@@ -141,24 +137,23 @@ async function seed() {
         }
       )
       .on("end", () => {
-        console.log(results);
+        console.log("Data seeding completed for travel destinations.");
       });
   }
-  console.log("hawktuah");
-  console.log(destinations);
 
   // --- Seed Lodgings ---
   const lodgingsCount = 15;
   const lodgings: Lodging[] = [];
   for (let i = 0; i < lodgingsCount; i++) {
+    const pricePerNight = faker.number.int({ min: 50, max: 300 })
     const lodging = await createOne("lodging", () => ({
       name: faker.company.name() + " Hotel",
       description: faker.lorem.paragraphs(2),
       lodgingPictureUrl: faker.image.url(),
-      pricePerNight: faker.number.int({ min: 50, max: 300 }),
+      pricePerNight,
       address: faker.location.streetAddress(),
       city: faker.location.city(),
-      country: faker.location.countryCode(),
+      country: faker.location.country(),
       latitude: faker.location.latitude(),
       longitude: faker.location.longitude(),
       propertyType: faker.helpers.arrayElement([
@@ -174,6 +169,20 @@ async function seed() {
             faker.number.int({ min: 1, max: 3 })
           )
           .map((cat) => ({ id: cat.id })),
+      },
+      
+      Rooms: {
+        create: Array.from({ length: faker.number.int({ min: 5, max: 10 }) }, (_,index) => ({
+          name: faker.lorem.words(2),
+          description: faker.lorem.sentence(),
+          price: index === 0 ? pricePerNight : faker.number.int({ min: pricePerNight, max: pricePerNight * 100 }),
+          capacity: faker.number.int({ min: 1, max: 4 }),
+          status: faker.helpers.arrayElement(["AVAILABLE", "OCCUPIED"]),
+          roomPictureUrl: faker.image.url({
+            width: 800,
+            height: 600
+          }),
+        })),
       },
     }));
     if (lodging) {
@@ -210,7 +219,7 @@ async function seed() {
   }
 
   // --- Seed Travel Plans ---
-  const plansCount = 8;
+  const plansCount = 10;
   const plans: TravelPlan[] = [];
   for (let i = 0; i < plansCount; i++) {
     const startDate = faker.date.future();
@@ -230,20 +239,20 @@ async function seed() {
 
   // --- Seed Payments ---
   const paymentsCount = 12;
-  await createMany("payment", paymentsCount, () => ({
+  await createMany<Payment>("payment", paymentsCount, () => ({
     userId: faker.helpers.arrayElement(users).id,
-    planId: faker.helpers.arrayElement(plans).id,
-    transactionId: faker.string.uuid(),
     paymentType: faker.helpers.arrayElement(["virtual_account", "credit_card"]),
     bank: faker.helpers.arrayElement(bankEnumValues),
     vaNumber: faker.helpers.maybe(() => faker.finance.accountNumber()),
     amount: faker.number.int({ min: 100, max: 5000 }),
     paymentStatus: faker.helpers.arrayElement(["pending", "paid", "failed"]),
   }));
+  const payments = await prisma.payment.findMany()
+
 
   // --- Seed Travel Tickets ---
   const travelTicketsCount = 30;
-  await createMany("travelTicket", travelTicketsCount, () => ({
+  await createMany<TravelTicket>("travelTicket", travelTicketsCount, () => ({
     userId: faker.helpers.arrayElement(users).id,
     travelDestinationId: faker.helpers.arrayElement(destinations).id,
     guestAmount: faker.number.int({ min: 1, max: 5 }),
@@ -251,11 +260,13 @@ async function seed() {
     visitDate: faker.helpers.maybe(() => faker.date.future()),
     status: faker.helpers.arrayElement(statusEnumValues),
     planId: faker.helpers.maybe(() => faker.helpers.arrayElement(plans).id),
+    paymentId: faker.helpers.arrayElement(payments).id,
+
   }));
 
   // --- Seed Lodging Tickets ---
   const lodgingTicketsCount = 25;
-  await createMany("lodgingTicket", lodgingTicketsCount, () => ({
+  await createMany<LodgingTicket>("lodgingTicket", lodgingTicketsCount, () => ({
     userId: faker.helpers.arrayElement(users).id,
     lodgingId: faker.helpers.arrayElement(lodgings).id,
     guestAmount: faker.number.int({ min: 1, max: 4 }),
@@ -264,6 +275,7 @@ async function seed() {
     checkOutDate: faker.date.future(),
     status: faker.helpers.arrayElement(statusEnumValues),
     planId: faker.helpers.maybe(() => faker.helpers.arrayElement(plans).id),
+    paymentId: faker.helpers.arrayElement(payments).id,
   }));
 
   // --- Seed Transportation Tickets ---
@@ -277,10 +289,12 @@ async function seed() {
     arrivalDateTime: faker.date.future(),
     status: faker.helpers.arrayElement(statusEnumValues),
     planId: faker.helpers.maybe(() => faker.helpers.arrayElement(plans).id),
+    paymentId: faker.helpers.arrayElement(payments).id,
+
   }));
 
   // --- Seed Reviews ---
-  const reviewsCount = 50;
+  const reviewsCount = 1000;
   await createMany("review", reviewsCount, () => {
     const targetType = faker.helpers.arrayElement(["destination", "lodging"]);
     const reviewData = {

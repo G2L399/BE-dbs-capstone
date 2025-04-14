@@ -10,10 +10,7 @@
     "rootDir": "./src",
     "baseUrl": "./src",
     "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "paths": {
-      "@helper/*": ["helper/*"]
-    }
+    "noEmit": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

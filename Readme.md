@@ -38,13 +38,13 @@ To create a new GET route for `/travels`, you would:
 
     ```typescript
     // filepath: src/GET/travels/app.ts
-    import Hapi from "@hapi/hapi";
+    import Hapi from '@hapi/hapi';
 
     export default (
       request: Hapi.Request<Hapi.ReqRefDefaults>,
       h: Hapi.ResponseToolkit<Hapi.ReqRefDefaults>
     ) => {
-      return "GET request to /travels";
+      return 'GET request to /travels';
     };
     ```
 

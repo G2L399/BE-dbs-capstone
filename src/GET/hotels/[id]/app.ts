@@ -1,3 +1,4 @@
+
 import Hapi from "@hapi/hapi";
 import Joi from "joi";
 import { getHotelById } from "../../../services/hotelService.ts";

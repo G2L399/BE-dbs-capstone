@@ -9,6 +9,7 @@ export default async (
   try {
     // Get query parameters with default values
     const { limit } = request.query as { limit?: number };
+
     const hotelLimit = limit || 10; // Default to 10 for this endpoint
     
     // Use the service function to get the data
