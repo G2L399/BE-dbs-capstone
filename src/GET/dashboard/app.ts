@@ -31,6 +31,14 @@ export default async (
 
     // Format destination data with average rating
     const formattedDestinations = popularDestinations.map((destination) => {
+      // Calculate average rating manually
+      const totalRating = destination.reviews.reduce(
+        (sum, review) => sum + review.rating,
+        0
+      );
+      const avgRating = destination.reviews.length > 0 
+        ? totalRating / destination.reviews.length 
+        : 0;
 
       return {
         id: destination.id,
@@ -41,7 +49,7 @@ export default async (
         address: destination.address,
         city: destination.city,
         country: destination.country,
-        avgRating: destination.avg_rating,
+        avgRating: parseFloat(avgRating.toFixed(1)), // Use calculated rating instead of direct access
         reviewCount: destination.reviews.length,
         popularity: destination._count?.travelTickets || 0
       };
