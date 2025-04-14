@@ -27,9 +27,13 @@ const init = async () => {
         multipart: true // Enable multipart support
       },
       cors:{
-        origin: ['*'],
+        origin: ['http://localhost:3000'],
+        credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+        headers: ['Authorization', 'Content-Type'], // Allow specific headers
+        maxAge: 600 // Cache preflight responses for 10 minutes
       }
-    }
+    },
+
   });
   await server.register(JwtAuth);
 
