@@ -1,40 +1,41 @@
-import Hapi from '@hapi/hapi';
-import Joi from 'joi';
-import { getHotelByID } from '../../../services/hotelService.ts';
+
+import Hapi from "@hapi/hapi";
+import Joi from "joi";
+import { getHotelById } from "../../../services/hotelService.ts";
 
 export default async (
   request: Hapi.Request<Hapi.ReqRefDefaults>,
   h: Hapi.ResponseToolkit<Hapi.ReqRefDefaults>
 ) => {
   try {
-    // Get query parameters with default values
-    const { id } = request.params as { id: number };
+    const id = parseInt(request.params.id);
+    
+    // Use the service function to get hotel by ID
+    const result = await getHotelById(id);
 
-    // Use the service function to get the data
-    const Hotel = await getHotelByID(id);
+    if (!result.hotel) {
+      return h.response({
+        error: `Hotel with ID ${id} not found`
+      }).code(404);
+    }
 
-    return h
-      .response({
-        Hotel
-      })
-      .code(200);
+    return h.response(result).code(200);
   } catch (error) {
-    console.error('Error fetching best-deal hotels:', error);
-    return h
-      .response({
-        error: 'Failed to fetch best-deal hotels'
-      })
-      .code(500);
+    console.error(`Error fetching hotel with ID ${request.params.id}:`, error);
+    return h.response({
+      error: "Failed to fetch hotel details"
+    }).code(500);
   }
 };
 
 export const options: Hapi.RouteOptions = {
-  tags: ['api', 'hotels'],
-  description: 'Get top-rated hotels based on user reviews',
-  notes: 'Returns an array of hotels sorted by rating',
+  tags: ["api", "hotels"],
+  description: "Get hotel details by ID",
+  notes: "Returns detailed information about a specific hotel including reviews",
   validate: {
     params: Joi.object({
-      id: Joi.number().required()
+      id: Joi.string().required()
+        .description("The ID of the hotel to retrieve")
     })
   }
 };
