@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -90,12 +90,12 @@ export async function getAllDestinations(
   const skip = (page - 1) * limit;
 
   // Build the where clause based on filters
-  const where: any = {};
+  const where: Prisma.TravelDestinationWhereInput = {};
 
   if (search) {
     where.OR = [
-      { name: { contains: search, mode: 'insensitive' } },
-      { description: { contains: search, mode: 'insensitive' } }
+      { name: { contains: search } },
+      { description: { contains: search } }
     ];
   }
 
