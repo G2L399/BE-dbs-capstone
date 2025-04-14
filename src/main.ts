@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 const prisma = new PrismaClient();
 const init = async () => {
   const server = Hapi.server({
-    port: 3000,
+    port: 3001,
     host: 'localhost',
     routes: {
       validate: {
@@ -25,6 +25,9 @@ const init = async () => {
       payload: {
         allow: ['application/json', 'multipart/form-data'], // Allow both JSON and multipart
         multipart: true // Enable multipart support
+      },
+      cors:{
+        origin: ['*'],
       }
     }
   });
