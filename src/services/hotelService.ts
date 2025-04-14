@@ -255,3 +255,40 @@ export async function getHotelById(id: number): Promise<{
     }
   };
 }
+
+export async function getBookingHotel(
+  id: number
+): Promise<(Lodging & { reviews: Review[]; Rooms: Rooms[] }) | null> {
+  // Retrieve hotels with their reviews and available rooms
+  const hotel = await prisma.lodging.findFirst({
+    where: {
+      id
+    },
+    include: {
+      reviews: true,
+      Rooms: {
+        where: {
+          status: "AVAILABLE"
+        },
+        orderBy: {
+          price: 'asc'
+        }
+      },
+      categories: true
+    }
+  })
+  return hotel;
+}
+
+export async function getBestDealHotelsByPrice(
+  takeForFiltering: number = 8
+): Promise<Lodging[]> {
+  const hotels = await prisma.lodging.findMany({
+    take: takeForFiltering,
+    include: {
+      reviews: true,
+      categories: true
+    },
+  });
+  return hotels
+}
