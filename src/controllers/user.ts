@@ -1,7 +1,7 @@
 import Hapi from '@hapi/hapi';
-export default (
+export const welcome = (
   request: Hapi.Request<Hapi.ReqRefDefaults>,
   h: Hapi.ResponseToolkit<Hapi.ReqRefDefaults>
 ) => {
-  return 'GET request to /destination';
+  return 'PATCH request to /user';
 };

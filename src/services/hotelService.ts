@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -22,7 +22,10 @@ interface HotelWithRating {
  * @param takeForFiltering Number of hotels to retrieve for filtering (default: 20)
  * @returns Array of top-rated hotels with calculated average ratings
  */
-export async function getTopRatedHotelsByReview(limit: number = 3, takeForFiltering: number = 20): Promise<HotelWithRating[]> {
+export async function getTopRatedHotelsByReview(
+  limit: number = 3,
+  takeForFiltering: number = 20
+): Promise<HotelWithRating[]> {
   // Retrieve hotels with their reviews
   const hotels = await prisma.lodging.findMany({
     take: takeForFiltering,
@@ -32,15 +35,14 @@ export async function getTopRatedHotelsByReview(limit: number = 3, takeForFilter
   });
 
   // Calculate average rating and sort
-  const hotelsWithRating = hotels.map(hotel => {
+  const hotelsWithRating = hotels.map((hotel) => {
     const totalRating = hotel.reviews.reduce(
-      (sum, review) => sum + review.rating, 
+      (sum, review) => sum + review.rating,
       0
     );
-    const avgRating = hotel.reviews.length > 0 
-      ? totalRating / hotel.reviews.length 
-      : 0;
-    
+    const avgRating =
+      hotel.reviews.length > 0 ? totalRating / hotel.reviews.length : 0;
+
     return {
       id: hotel.id,
       name: hotel.name,

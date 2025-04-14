@@ -1,5 +1,5 @@
-import Hapi from "@hapi/hapi";
-import Joi from "joi"; // Import Joi
+import Hapi from '@hapi/hapi';
+import Joi from 'joi'; // Import Joi
 export default (
   request: Hapi.Request<Hapi.ReqRefDefaults>,
   h: Hapi.ResponseToolkit<Hapi.ReqRefDefaults>
@@ -10,12 +10,12 @@ export default (
     .code(200);
 };
 export const options: Hapi.RouteOptions<Hapi.ReqRefDefaults> = {
-  tags: ["api"],
-  description: "A PATCH endpoint for the destination",
-  notes: "Returns a message indicating the endpoint is reached",
+  tags: ['api'],
+  description: 'A PATCH endpoint for the destination',
+  notes: 'Returns a message indicating the endpoint is reached',
   validate: {
     params: Joi.object({
-      id: Joi.string().required().description("The ID of the destination"),
-    }),
-  },
+      id: Joi.string().required().description('The ID of the destination')
+    })
+  }
 };

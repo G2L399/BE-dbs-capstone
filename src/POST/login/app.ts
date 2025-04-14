@@ -11,20 +11,20 @@ export default async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {
     if (user && (await comparePassword(password, user.password))) {
       const token = jwt.sign(
         {
-          id: user?.id,
+          id: user?.id
         },
         process.env.JWT_SECRET as string,
         {
-          expiresIn: "1h",
+          expiresIn: '1h'
         }
       );
       return h
-        .response({ message: "Login successful", email, token })
+        .response({ message: 'Login successful', email, token })
         .code(200);
     } else {
-      return h.response({ message: "Invalid email or password" }).code(401);
+      return h.response({ message: 'Invalid email or password' }).code(401);
     }
   } else {
-    return h.response({ message: "Email and password are required" }).code(400);
+    return h.response({ message: 'Email and password are required' }).code(400);
   }
 };
