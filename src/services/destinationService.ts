@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -21,7 +21,9 @@ interface DestinationWithRating {
  * @param limit Number of destinations to return (default: 7)
  * @returns Array of formatted destination data with ratings
  */
-export async function getPopularDestinationsByTicketCount(limit: number = 7): Promise<DestinationWithRating[]> {
+export async function getPopularDestinationsByTicketCount(
+  limit: number = 7
+): Promise<DestinationWithRating[]> {
   // Retrieve popular destinations
   const popularDestinations = await prisma.travelDestination.findMany({
     take: limit,
@@ -39,21 +41,22 @@ export async function getPopularDestinationsByTicketCount(limit: number = 7): Pr
   });
 
   // Sort by number of tickets (popularity)
-  const sortedDestinations = [...popularDestinations].sort((a, b) => 
-    (b._count?.travelTickets || 0) - (a._count?.travelTickets || 0)
+  const sortedDestinations = [...popularDestinations].sort(
+    (a, b) => (b._count?.travelTickets || 0) - (a._count?.travelTickets || 0)
   );
 
   // Format destination data with average rating
-  return sortedDestinations.map(destination => {
+  return sortedDestinations.map((destination) => {
     // Calculate average rating
     const totalRating = destination.reviews.reduce(
-      (sum, review) => sum + review.rating, 
+      (sum, review) => sum + review.rating,
       0
     );
-    const avgRating = destination.reviews.length > 0 
-      ? totalRating / destination.reviews.length 
-      : 0;
-    
+    const avgRating =
+      destination.reviews.length > 0
+        ? totalRating / destination.reviews.length
+        : 0;
+
     return {
       id: destination.id,
       name: destination.name,
