@@ -1,5 +1,6 @@
 import Hapi from '@hapi/hapi';
 import { getTravelHistory } from '../../../services/destinationService.ts';
+import Joi from 'joi';
 
 
 export default async (
@@ -8,6 +9,7 @@ export default async (
 ) => {
   try {
     const userId = request.auth.credentials.id as number;
+    const limit = request.query.limit ? parseInt(request.query.limit as string) : -1;
     if (!userId) {
       return h
         .response({
@@ -16,7 +18,7 @@ export default async (
         })
         .code(401);
     }
-    const history = await getTravelHistory(userId);
+    const history = await getTravelHistory(userId, limit);
 
     return h
       .response({
@@ -39,5 +41,10 @@ export const options: Hapi.RouteOptions = {
   tags: ['api', 'destinations'],
   description: 'Get Travel History',
   notes: "Returns detailed information about the user's history",
-  auth: 'jwt'
+  auth: 'jwt',
+  validate: {
+    query: Joi.object({
+      limit: Joi.number().integer().min(1).optional()
+    })
+  },
 };

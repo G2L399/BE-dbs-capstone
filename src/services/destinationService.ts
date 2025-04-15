@@ -152,12 +152,14 @@ export async function getAllDestinations(
   };
 }
 
-export async function getTravelHistory(id: number) {
+export async function getTravelHistory(id: number,limit: number = 10) {
   return await prisma.travelTicket.findMany({
     where: {
-      userId:id
-    },include:{
+      userId: id
+    },
+    include: {
       travelDestination: true
-    }
+    },
+    take: limit
   });
 }
