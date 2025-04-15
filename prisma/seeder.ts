@@ -218,24 +218,7 @@ async function seed() {
     }
   }
 
-  // --- Seed Travel Plans ---
-  const plansCount = 10;
-  const plans: TravelPlan[] = [];
-  for (let i = 0; i < plansCount; i++) {
-    const startDate = faker.date.future();
-    const endDate = faker.date.future({ years: 1, refDate: startDate });
-    const plan = await createOne("travelPlan", () => ({
-      userId: faker.helpers.arrayElement(users).id,
-      name: faker.lorem.words(faker.number.int({ min: 2, max: 5 })),
-      startDate,
-      endDate,
-      totalPrice: faker.number.int({ min: 500, max: 10000 }),
-      status: faker.helpers.arrayElement(statusEnumValues),
-    }));
-    if (plan) {
-      plans.push(plan);
-    }
-  }
+
 
   // --- Seed Payments ---
   const paymentsCount = 12;
@@ -259,14 +242,15 @@ async function seed() {
     totalPrice: faker.number.int({ min: 50, max: 1000 }),
     visitDate: faker.helpers.maybe(() => faker.date.future()),
     status: faker.helpers.arrayElement(statusEnumValues),
-    planId: faker.helpers.maybe(() => faker.helpers.arrayElement(plans).id),
     paymentId: faker.helpers.arrayElement(payments).id,
 
   }));
+  const TravelTickets = await prisma.travelTicket.findMany()
+
 
   // --- Seed Lodging Tickets ---
   const lodgingTicketsCount = 25;
-  await createMany<LodgingTicket>("lodgingTicket", lodgingTicketsCount, () => ({
+   await createMany<LodgingTicket>("lodgingTicket", lodgingTicketsCount, () => ({
     userId: faker.helpers.arrayElement(users).id,
     lodgingId: faker.helpers.arrayElement(lodgings).id,
     guestAmount: faker.number.int({ min: 1, max: 4 }),
@@ -274,13 +258,13 @@ async function seed() {
     checkInDate: faker.date.future(),
     checkOutDate: faker.date.future(),
     status: faker.helpers.arrayElement(statusEnumValues),
-    planId: faker.helpers.maybe(() => faker.helpers.arrayElement(plans).id),
     paymentId: faker.helpers.arrayElement(payments).id,
   }));
+  const LodgingTickets = await prisma.lodgingTicket.findMany()
 
   // --- Seed Transportation Tickets ---
   const transportationTicketsCount = 40;
-  await createMany("transportationTicket", transportationTicketsCount, () => ({
+ await createMany("transportationTicket", transportationTicketsCount, () => ({
     userId: faker.helpers.arrayElement(users).id,
     transportationId: faker.helpers.arrayElement(transportations).id,
     passengerAmount: faker.number.int({ min: 1, max: 3 }),
@@ -288,10 +272,33 @@ async function seed() {
     departureDateTime: faker.date.future(),
     arrivalDateTime: faker.date.future(),
     status: faker.helpers.arrayElement(statusEnumValues),
-    planId: faker.helpers.maybe(() => faker.helpers.arrayElement(plans).id),
     paymentId: faker.helpers.arrayElement(payments).id,
 
   }));
+  const transportationTickets = await prisma.transportationTicket.findMany()
+
+    // --- Seed Travel Plans ---
+    const plansCount = 10;
+    const plans: TravelPlan[] = [];
+    for (let i = 0; i < plansCount; i++) {
+      const startDate = faker.date.future();
+      const endDate = faker.date.future({ years: 1, refDate: startDate });
+      const plan = await createOne<TravelPlan>("travelPlan", () => ({
+        userId: faker.helpers.arrayElement(users).id,
+        name: faker.lorem.words(faker.number.int({ min: 2, max: 5 })),
+        startDate,
+        endDate,
+        totalPrice: faker.number.int({ min: 500, max: 10000 }),
+        status: faker.helpers.arrayElement(statusEnumValues),
+        lodgingTicketId: faker.helpers.arrayElement(LodgingTickets).id ,
+        travelTicketId: faker.helpers.arrayElement(TravelTickets).id,
+        transportationTicketId: faker.helpers.arrayElement(transportationTickets).id
+        
+      }));
+      if (plan) {
+        plans.push(plan);
+      }
+    }
 
   // --- Seed Reviews ---
   const reviewsCount = 1000;

@@ -65,7 +65,6 @@ const init = async () => {
       }
     }
   ]);
-
   // Helper function to dynamically load routes
   const loadRoutes = (method: RouteDefMethods) => {
     method = method.toUpperCase() as RouteDefMethods;

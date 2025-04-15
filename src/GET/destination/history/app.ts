@@ -9,7 +9,7 @@ export default async (
 ) => {
   try {
     const userId = request.auth.credentials.id as number;
-    const limit = request.query.limit ? parseInt(request.query.limit as string) : -1;
+    const limit = request.query.limit as number
     if (!userId) {
       return h
         .response({
