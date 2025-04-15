@@ -56,21 +56,24 @@ model Preferences {
 }
 
 model TravelPlan {
-  id         Int        @id @default(autoincrement())
-  userId     Int
-  name       String? // Optional name for the plan (e.g., "Bali Summer Trip")
-  startDate  DateTime? // Overall plan start date
-  endDate    DateTime? // Overall plan end date
-  totalPrice Int // Consider Decimal if handling fractions or large sums
-  status     StatusEnum @default(PENDING)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  id                     Int       @id @default(autoincrement())
+  userId                 Int
+  name                   String? // Optional name for the plan (e.g., "Bali Summer Trip")
+  startDate              DateTime? // Overall plan start date
+  endDate                DateTime? // Overall plan end date
+  totalPrice             Int // Consider Decimal if handling fractions or large sums
+  travelTicketId         Int?
+  lodgingTicketId        Int?
+  transportationTicketId Int?
 
+  status               StatusEnum            @default(PENDING)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
   // Relations
-  user                  User                   @relation(fields: [userId], references: [id])
-  transportationTickets TransportationTicket[]
-  lodgingTickets        LodgingTicket[]
-  travelTickets         TravelTicket[]
+  user                 User                  @relation(fields: [userId], references: [id])
+  TravelTicket         TravelTicket?         @relation(fields: [travelTicketId], references: [id])
+  LodgingTicket        LodgingTicket?        @relation(fields: [lodgingTicketId], references: [id])
+  TransportationTicket TransportationTicket? @relation(fields: [transportationTicketId], references: [id])
 }
 
 // --- Booking/Ticket Models ---
@@ -81,18 +84,17 @@ model TravelTicket {
   travelDestinationId Int // Renamed for clarity
   guestAmount         Int
   totalPrice          Int
-  paymentId           Int
+  paymentId           Int?
   visitDate           DateTime? // Specific date of visit, if applicable
   status              StatusEnum @default(PENDING)
-  planId              Int? // Make optional? Or ensure every ticket belongs to a plan? Assume plan required for now.
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
 
   // Relations
   user              User              @relation(fields: [userId], references: [id])
   travelDestination TravelDestination @relation(fields: [travelDestinationId], references: [id])
-  plan              TravelPlan?       @relation(fields: [planId], references: [id]) // Link to plan
   payment           Payment?          @relation(fields: [paymentId], references: [id])
+  plan              TravelPlan[]
 }
 
 model LodgingTicket {
@@ -103,17 +105,16 @@ model LodgingTicket {
   totalPrice   Int
   checkInDate  DateTime
   checkOutDate DateTime
-  paymentId    Int
+  paymentId    Int?
   status       StatusEnum @default(PENDING)
-  planId       Int?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
   // Relations
-  user    User        @relation(fields: [userId], references: [id])
-  lodging Lodging     @relation(fields: [lodgingId], references: [id])
-  plan    TravelPlan? @relation(fields: [planId], references: [id]) // Link to plan
-  payment Payment?    @relation(fields: [paymentId], references: [id])
+  user    User         @relation(fields: [userId], references: [id])
+  lodging Lodging      @relation(fields: [lodgingId], references: [id])
+  payment Payment?     @relation(fields: [paymentId], references: [id])
+  plan    TravelPlan[]
 }
 
 model TransportationTicket {
@@ -121,20 +122,20 @@ model TransportationTicket {
   userId            Int
   transportationId  Int // Renamed for consistency
   passengerAmount   Int
-  paymentId         Int
+  paymentId         Int?
   totalPrice        Int
   departureDateTime DateTime // Specific departure for this ticket
   arrivalDateTime   DateTime // Specific arrival for this ticket
   status            StatusEnum @default(PENDING)
-  planId            Int? // Assume plan required
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
   // Relations
   user           User           @relation(fields: [userId], references: [id])
   transportation Transportation @relation(fields: [transportationId], references: [id])
-  plan           TravelPlan?    @relation(fields: [planId], references: [id]) // Link to plan 
-  payment        Payment?       @relation(fields: [paymentId], references: [id])
+
+  payment Payment?     @relation(fields: [paymentId], references: [id])
+  plan    TravelPlan[]
 }
 
 // --- Service Detail Models ---
