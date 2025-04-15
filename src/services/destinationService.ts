@@ -151,3 +151,15 @@ export async function getAllDestinations(
     total
   };
 }
+
+export async function getTravelHistory(id: number,limit: number = 10) {
+  return await prisma.travelTicket.findMany({
+    where: {
+      userId: id
+    },
+    include: {
+      travelDestination: true
+    },
+    take: limit
+  });
+}

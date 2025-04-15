@@ -26,7 +26,8 @@ export default async (
       },
       include: {
         reviews: true,
-        categories: true
+        categories: true,
+        travelTickets: true
       }
     });
 
