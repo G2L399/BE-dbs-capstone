@@ -89,5 +89,5 @@ export const options: Hapi.RouteOptions = {
       "travelDestinationId": Joi.number().required(),
       "visitDate": Joi.string().required()
     }).unknown(true)
-  }
+  },
 };
