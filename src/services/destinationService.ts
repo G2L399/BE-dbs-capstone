@@ -14,6 +14,7 @@ interface DestinationWithRating {
   avgRating: number;
   reviewCount: number;
   popularity: number;
+  category: string | null;
 }
 
 /**
@@ -24,13 +25,9 @@ interface DestinationWithRating {
 export async function getPopularDestinationsByTicketCount(
   limit: number = 7
 ): Promise<DestinationWithRating[]> {
-  // Retrieve popular destinations
-  const popularDestinations = await prisma.travelDestination.findMany({
-    take: limit,
+  // Retrieve all destinations with review data and ticket counts
+  const destinations = await prisma.travelDestination.findMany({
     include: {
-      travelTickets: {
-        take: 1
-      },
       reviews: true,
       _count: {
         select: {
@@ -40,10 +37,12 @@ export async function getPopularDestinationsByTicketCount(
     }
   });
 
-  // Sort by number of tickets (popularity)
-  const sortedDestinations = [...popularDestinations].sort(
-    (a, b) => (b._count?.travelTickets || 0) - (a._count?.travelTickets || 0)
-  );
+  // Sort by number of tickets and take the top 'limit' items
+  const sortedDestinations = [...destinations]
+    .sort(
+      (a, b) => (b._count?.travelTickets || 0) - (a._count?.travelTickets || 0)
+    )
+    .slice(0, limit);
 
   // Format destination data with average rating
   return sortedDestinations.map((destination) => {
@@ -66,6 +65,7 @@ export async function getPopularDestinationsByTicketCount(
       address: destination.address,
       city: destination.city,
       country: destination.country,
+      category: destination.category,
       avgRating: parseFloat(avgRating.toFixed(1)),
       reviewCount: destination.reviews.length,
       popularity: destination._count?.travelTickets || 0
@@ -113,7 +113,11 @@ export async function getAllDestinations(
     take: limit,
     include: {
       reviews: true,
-      categories: true
+      _count: {
+        select: {
+          travelTickets: true
+        }
+      }
     },
     orderBy: {
       name: 'asc'
@@ -142,17 +146,17 @@ export async function getAllDestinations(
         address: destination.address,
         city: destination.city,
         country: destination.country,
+        category: destination.category,
         avgRating: parseFloat(avgRating.toFixed(1)),
         reviewCount: destination.reviews.length,
-        popularity: 0, // We don't have ticket counts here
-        categories: destination.categories.map((cat) => cat.name)
+        popularity: destination._count?.travelTickets || 0 // Now we use the ticket count here too
       };
     }),
     total
   };
 }
 
-export async function getTravelHistory(id: number,limit: number = 10) {
+export async function getTravelHistory(id: number, limit: number = 10) {
   return await prisma.travelTicket.findMany({
     where: {
       userId: id

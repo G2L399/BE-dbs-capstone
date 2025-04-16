@@ -9,7 +9,8 @@
     "build": "webpack --config webpack.config.cjs",
     "start:prod": "node dist/bundle.cjs",
     "format": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "seed": "node prisma/seeder.ts"
   },
   "lint-staged": {
     "**/*.{js,jsx,tsx,ts,css,less,scss,sass}": [

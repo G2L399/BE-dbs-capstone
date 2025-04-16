@@ -26,7 +26,6 @@ export default async (
       },
       include: {
         reviews: true,
-        categories: true,
         travelTickets: true
       }
     });
@@ -52,8 +51,7 @@ export default async (
     const formattedDestination = {
       ...destination,
       avgRating: parseFloat(avgRating.toFixed(1)),
-      reviewCount: destination.reviews.length,
-      categories: destination.categories.map((category) => category.name)
+      reviewCount: destination.reviews.length
     };
 
     return h
