@@ -61,7 +61,16 @@ const init = async () => {
         info: {
           title: 'API Documentation',
           version: '1.0.0'
-        }
+        },
+        securityDefinitions: {
+          Bearer: {
+            type: 'apiKey',
+            name: 'Authorization',
+            in: 'header',
+            description: 'Enter your Bearer token in the format "Bearer <token>"'
+          }
+        },
+        security: [{ Bearer: [] }] // Apply Bearer auth globally to all routes
       }
     }
   ]);
@@ -122,6 +131,10 @@ const init = async () => {
   loadRoutes('post');
   loadRoutes('delete');
   loadRoutes('patch');
+  server.ext('onRequest', (request, h) => {
+    console.log(`Incoming request: ${request.method.toUpperCase()} ${request.url.pathname}`);
+    return h.continue;
+  });
   try {
     // Start the server
     await server.start();
