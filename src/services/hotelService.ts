@@ -1,9 +1,10 @@
 import {
-   type Lodging, 
-  Prisma, 
-  PrismaClient, 
-  type Review, 
-  type Rooms } from '@prisma/client';
+  type Lodging,
+  Prisma,
+  PrismaClient,
+  type Review,
+  type Rooms
+} from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -27,7 +28,6 @@ interface HotelWithRating {
     userId: number;
     username: string;
   }[];
-
 }
 
 /**
@@ -85,30 +85,34 @@ export async function getTopRatedHotelsByReview(
  * @param filters Optional filters for hotel data
  * @returns Paginated array of hotels with rating information
  */
-export async function getAllHotels(page: number = 1, limit: number = 10, filters?: any): Promise<{
+export async function getAllHotels(
+  page: number = 1,
+  limit: number = 10,
+  filters?: any
+): Promise<{
   data: HotelWithRating[];
   meta: {
     totalCount: number;
     page: number;
     pageSize: number;
     totalPages: number;
-  }
+  };
 }> {
   // Calculate pagination values
   const skip = (page - 1) * limit;
-  
+
   // Build where clause based on filters
   let whereClause = {};
   if (filters) {
     // Add filter conditions here (e.g., price range, city, etc.)
     if (filters.city) whereClause = { ...whereClause, city: filters.city };
     if (filters.priceMin && filters.priceMax) {
-      whereClause = { 
-        ...whereClause, 
-        pricePerNight: { 
-          gte: parseInt(filters.priceMin), 
-          lte: parseInt(filters.priceMax) 
-        } 
+      whereClause = {
+        ...whereClause,
+        pricePerNight: {
+          gte: parseInt(filters.priceMin),
+          lte: parseInt(filters.priceMax)
+        }
       };
     }
     if (filters.propertyType) {
@@ -131,8 +135,7 @@ export async function getAllHotels(page: number = 1, limit: number = 10, filters
     take: limit,
     where: whereClause,
     include: {
-      reviews: true,
-      categories: true
+      reviews: true
     },
     orderBy: {
       id: 'asc' // Default ordering
@@ -140,15 +143,14 @@ export async function getAllHotels(page: number = 1, limit: number = 10, filters
   });
 
   // Calculate average rating for each hotel
-  const hotelsWithRating = hotels.map(hotel => {
+  const hotelsWithRating = hotels.map((hotel) => {
     const totalRating = hotel.reviews.reduce(
-      (sum, review) => sum + review.rating, 
+      (sum, review) => sum + review.rating,
       0
     );
-    const avgRating = hotel.reviews.length > 0 
-      ? totalRating / hotel.reviews.length 
-      : 0;
-    
+    const avgRating =
+      hotel.reviews.length > 0 ? totalRating / hotel.reviews.length : 0;
+
     return {
       id: hotel.id,
       name: hotel.name,
@@ -160,8 +162,7 @@ export async function getAllHotels(page: number = 1, limit: number = 10, filters
       country: hotel.country,
       propertyType: hotel.propertyType,
       avgRating: parseFloat(avgRating.toFixed(1)),
-      reviewCount: hotel.reviews.length,
-      categories: hotel.categories.map(category => category.name),
+      reviewCount: hotel.reviews.length
     };
   });
 
@@ -182,33 +183,35 @@ export async function getAllHotels(page: number = 1, limit: number = 10, filters
  * @returns Detailed hotel information including reviews or null if not found
  */
 export async function getHotelById(id: number): Promise<{
-  hotel: HotelWithRating & {
-    reviews: {
-      id: number;
-      rating: number;
-      comment: string | null;
-      userId: number;
-      username: string;
-    }[];
-  } | null;
+  hotel:
+    | (HotelWithRating & {
+        reviews: {
+          id: number;
+          rating: number;
+          comment: string | null;
+          userId: number;
+          username: string;
+        }[];
+      })
+    | null;
 }> {
   // Find the specific hotel by ID
   const hotel = await prisma.lodging.findUnique({
     where: { id },
     include: {
-      reviews: true,
-      categories: true
+      reviews: true
     }
   });
-  
+
   // Fetch usernames for reviews separately since we need to join them
-  const userIds = hotel?.reviews.map(review => review.userId) || [];
-  const users = userIds.length > 0 
-    ? await prisma.user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, username: true }
-      })
-    : [];
+  const userIds = hotel?.reviews.map((review) => review.userId) || [];
+  const users =
+    userIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, username: true }
+        })
+      : [];
 
   // Return null if hotel not found
   if (!hotel) {
@@ -217,22 +220,21 @@ export async function getHotelById(id: number): Promise<{
 
   // Calculate average rating
   const totalRating = hotel.reviews.reduce(
-    (sum, review) => sum + review.rating, 
+    (sum, review) => sum + review.rating,
     0
   );
-  const avgRating = hotel.reviews.length > 0 
-    ? totalRating / hotel.reviews.length 
-    : 0;
+  const avgRating =
+    hotel.reviews.length > 0 ? totalRating / hotel.reviews.length : 0;
 
   // Format reviews to include username
-  const formattedReviews = hotel.reviews.map(review => {
-    const user = users.find(u => u.id === review.userId);
+  const formattedReviews = hotel.reviews.map((review) => {
+    const user = users.find((u) => u.id === review.userId);
     return {
       id: review.id,
       rating: review.rating,
       comment: review.comment,
       userId: review.userId,
-      username: user?.username || "Unknown User" // Fallback if user not found
+      username: user?.username || 'Unknown User' // Fallback if user not found
     };
   });
 
@@ -250,7 +252,6 @@ export async function getHotelById(id: number): Promise<{
       propertyType: hotel.propertyType,
       avgRating: parseFloat(avgRating.toFixed(1)),
       reviewCount: hotel.reviews.length,
-      categories: hotel.categories.map(category => category.name),
       reviews: formattedReviews
     }
   };
@@ -268,15 +269,14 @@ export async function getBookingHotel(
       reviews: true,
       Rooms: {
         where: {
-          status: "AVAILABLE"
+          status: 'AVAILABLE'
         },
         orderBy: {
           price: 'asc'
         }
-      },
-      categories: true
+      }
     }
-  })
+  });
   return hotel;
 }
 
@@ -286,9 +286,8 @@ export async function getBestDealHotelsByPrice(
   const hotels = await prisma.lodging.findMany({
     take: takeForFiltering,
     include: {
-      reviews: true,
-      categories: true
-    },
+      reviews: true
+    }
   });
-  return hotels
+  return hotels;
 }

@@ -14,7 +14,7 @@ interface DestinationWithRating {
   avgRating: number;
   reviewCount: number;
   popularity: number;
-  categories?: string[];
+  category: string | null;
 }
 
 /**
@@ -39,7 +39,9 @@ export async function getPopularDestinationsByTicketCount(
 
   // Sort by number of tickets and take the top 'limit' items
   const sortedDestinations = [...destinations]
-    .sort((a, b) => (b._count?.travelTickets || 0) - (a._count?.travelTickets || 0))
+    .sort(
+      (a, b) => (b._count?.travelTickets || 0) - (a._count?.travelTickets || 0)
+    )
     .slice(0, limit);
 
   // Format destination data with average rating
@@ -63,6 +65,7 @@ export async function getPopularDestinationsByTicketCount(
       address: destination.address,
       city: destination.city,
       country: destination.country,
+      category: destination.category,
       avgRating: parseFloat(avgRating.toFixed(1)),
       reviewCount: destination.reviews.length,
       popularity: destination._count?.travelTickets || 0
@@ -110,7 +113,6 @@ export async function getAllDestinations(
     take: limit,
     include: {
       reviews: true,
-      categories: true,
       _count: {
         select: {
           travelTickets: true
@@ -144,10 +146,10 @@ export async function getAllDestinations(
         address: destination.address,
         city: destination.city,
         country: destination.country,
+        category: destination.category,
         avgRating: parseFloat(avgRating.toFixed(1)),
         reviewCount: destination.reviews.length,
-        popularity: destination._count?.travelTickets || 0, // Now we use the ticket count here too
-        categories: destination.categories.map((cat) => cat.name)
+        popularity: destination._count?.travelTickets || 0 // Now we use the ticket count here too
       };
     }),
     total
