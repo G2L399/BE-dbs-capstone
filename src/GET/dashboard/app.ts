@@ -9,25 +9,22 @@ export default async (
   h: Hapi.ResponseToolkit<Hapi.ReqRefDefaults>
 ) => {
   try {
-    // Retrieve popular destinations (7 items)
-    const popularDestinations = await prisma.travelDestination.findMany({
-      take: 7,
+    // Retrieve all destinations
+    const destinations = await prisma.travelDestination.findMany({
       include: {
-        travelTickets: {
-          take: 1
-        },
         reviews: true,
         _count: {
           select: {
             travelTickets: true
           }
         }
-      },
-      orderBy:{
-        travelTickets: {_count:'desc'}
       }
     });
 
+    // Sort by number of tickets (popularity) and take top 7
+    const popularDestinations = [...destinations]
+      .sort((a, b) => (b._count?.travelTickets || 0) - (a._count?.travelTickets || 0))
+      .slice(0, 7);
 
     // Format destination data with average rating
     const formattedDestinations = popularDestinations.map((destination) => {
