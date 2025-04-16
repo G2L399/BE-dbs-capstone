@@ -182,7 +182,6 @@ model Lodging {
   // Relations
   lodgingTickets LodgingTicket[]
   reviews        Review[]        @relation("LodgingReviews")
-  categories     Category[]      @relation("LodgingCategories")
   wishlistedBy   User[]          @relation("UserWishlistLodgings")
   Preferences    Preferences[]
   Rooms          Rooms[]
@@ -219,6 +218,7 @@ model TravelDestination {
   country          String? // Consider linking to a Country model
   latitude         Float?
   longitude        Float?
+  category         String?
   openingHours     String? // e.g., "09:00-17:00"
   avg_rating       Float?
   createdAt        DateTime @default(now())
@@ -227,7 +227,6 @@ model TravelDestination {
   // Relations
   travelTickets TravelTicket[]
   reviews       Review[]       @relation("DestinationReviews")
-  categories    Category[]     @relation("DestinationCategories")
   wishlistedBy  User[]         @relation("UserWishlistDestinations")
   Preferences   Preferences[]
 }
@@ -271,18 +270,6 @@ model Review {
   lodging           Lodging?           @relation("LodgingReviews", fields: [lodgingId], references: [id])
   transportation    Transportation?    @relation(fields: [transportationId], references: [id]) // Uncomment if adding
 }
-
-model Category {
-  id   Int    @id @default(autoincrement())
-  name String @unique // e.g., "Beach", "History", "Adventure", "Nature", "Luxury", "Budget"
-
-  // Relations (Many-to-Many)
-  destinations TravelDestination[] @relation("DestinationCategories")
-  lodgings     Lodging[]           @relation("LodgingCategories")
-  // transportations Transportation[]    @relation("TransportationCategories") // Add if needed
-}
-
-// --- Enums ---
 
 enum StatusEnum {
   PENDING // Initial state, awaiting payment or confirmation

@@ -59,23 +59,6 @@ async function seed() {
   ];
   const bankEnumValues = ['BCA', 'MANDIRI', 'BNI', 'BRI', 'OTHER'];
 
-  // --- Seed Categories ---
-  const categoriesData = [
-    'Beach',
-    'History',
-    'Adventure',
-    'Nature',
-    'Luxury',
-    'Budget',
-    'Food',
-    'Culture',
-    'Relaxation'
-  ];
-  for (const name of categoriesData) {
-    await createOne('category', () => ({ name }));
-  }
-  const existingCategories = await prisma.category.findMany();
-
   // --- Seed Users ---
   const usersCount = 10;
   const users: User[] = [];
@@ -106,6 +89,7 @@ async function seed() {
           Price: string;
           Place_Ratings: string;
           Description: string;
+          Category: string;
           Lat: any;
           Long: any;
         }) => {
@@ -117,6 +101,7 @@ async function seed() {
             price: Number(data.Price),
             address: faker.location.streetAddress(),
             city: data.City,
+            category: data.Category,
             country: 'Indonesia',
             latitude: parseFloat(data.Lat),
             longitude: parseFloat(data.Long),
@@ -124,15 +109,7 @@ async function seed() {
             openingHours: `${faker.number.int({
               min: 8,
               max: 10
-            })}:00-${faker.number.int({ min: 17, max: 20 })}:00`,
-            categories: {
-              connect: faker.helpers
-                .arrayElements(
-                  existingCategories,
-                  faker.number.int({ min: 1, max: 3 })
-                )
-                .map((cat) => ({ id: cat.id }))
-            }
+            })}:00-${faker.number.int({ min: 17, max: 20 })}:00`
           }));
           if (destination) {
             destinations.push(destination);
@@ -165,15 +142,6 @@ async function seed() {
         'Villa',
         'Apartment'
       ]),
-      categories: {
-        connect: faker.helpers
-          .arrayElements(
-            existingCategories,
-            faker.number.int({ min: 1, max: 3 })
-          )
-          .map((cat) => ({ id: cat.id }))
-      },
-
       Rooms: {
         create: Array.from(
           { length: faker.number.int({ min: 5, max: 10 }) },
