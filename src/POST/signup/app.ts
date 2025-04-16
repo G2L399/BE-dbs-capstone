@@ -3,7 +3,8 @@ import Hapi from '@hapi/hapi';
 import { hashPassword } from '../../helper/helper.ts';
 const prisma = new PrismaClient();
 export default async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {
-  const { email, password, username } = request.payload as any;
+  try {
+    const { email, password, username } = request.payload as any;
   if (!email || !password || !username) {
     return h
       .response({
@@ -21,16 +22,28 @@ export default async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {
       })
       .code(400);
   }
+  
 
   const hashedPassword = await hashPassword(password);
-
+  
   const newUser = await prisma.user.create({
     data: {
       email,
       password: hashedPassword,
-      username
+      username,
+      balance: 999999999
     }
-  });
+  });  
 
   return h.response(newUser).code(201);
+  } catch (error) {
+    console.error('Error creating user:', error);
+    return h.response({
+      message: 'An error occurred while processing your request',
+      success: false,
+      error: error.message, // Optionally include error details for debugging
+    }).code(500);
+    
+  }
+  
 };

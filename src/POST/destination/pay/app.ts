@@ -82,10 +82,7 @@ export const options: Hapi.RouteOptions = {
       "bank": Joi.string().optional(),
       "vaNumber": Joi.string().optional().allow(null),
       "paymentType": Joi.string().optional(),
-      "guestAmount": Joi.number().required().min(1).messages({
-        "number.base": "Guest amount must be a number",
-        "number.min": "Guest amount must be at least 1",
-      }),
+      "guestAmount": Joi.number().required().min(1).error(new Error('Guest amount must be at least 1')),
       "travelDestinationId": Joi.number().required(),
       "visitDate": Joi.string().required()
     }).unknown(true)
